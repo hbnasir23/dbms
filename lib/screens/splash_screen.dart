@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dbms/constants.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   SplashScreenState createState() => SplashScreenState();
 }
@@ -10,13 +13,11 @@ class SplashScreenState extends State<SplashScreen> with TickerProviderStateMixi
   late AnimationController _controller;
   late Animation<double> _logoAnimation;
   late Animation<double> _textAnimation;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
-
     super.initState();
-
-
     // Animation Controller for smooth transitions
     _controller = AnimationController(
       duration: const Duration(seconds: 2),
@@ -35,9 +36,34 @@ class SplashScreenState extends State<SplashScreen> with TickerProviderStateMixi
     // Start the animation
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 4), () {
+    // Check for stored credentials after animations
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    // Wait for animations to complete
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Check if user should stay logged in with role awareness
+    final loginResult = await _authService.autoLogin();
+
+
+    if (loginResult['success']) {
+      // Route based on role
+      if (loginResult['role'] == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin_dashboard');
+      } else if (loginResult['role'] == 'user') {
+        // User role
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+      else if (loginResult['role'] == 'doctor') {
+        // Doctor role
+        Navigator.pushReplacementNamed(context, '/doctor_dashboard');
+      }
+    } else {
+      // If auto login failed, redirect to login screen
       Navigator.pushReplacementNamed(context, '/login');
-    });
+    }
   }
 
   @override
@@ -48,7 +74,6 @@ class SplashScreenState extends State<SplashScreen> with TickerProviderStateMixi
 
   @override
   Widget build(BuildContext context) {
-
     AppConstants.init(context);
     return Scaffold(
       backgroundColor: Colors.white,
@@ -62,7 +87,7 @@ class SplashScreenState extends State<SplashScreen> with TickerProviderStateMixi
               opacity: _logoAnimation,
               child: Container(
                 height: AppConstants.deviceHeight * 0.3,
-                width: AppConstants.deviceWidth ,
+                width: AppConstants.deviceWidth,
                 decoration: BoxDecoration(
                   color: AppColors.lightBlue,
                   borderRadius: BorderRadius.circular(20),

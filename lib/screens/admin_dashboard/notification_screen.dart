@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class InboxScreen extends StatelessWidget {
+class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(

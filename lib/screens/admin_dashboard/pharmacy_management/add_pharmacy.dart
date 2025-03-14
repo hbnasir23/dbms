@@ -4,37 +4,31 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../constants.dart';
 
-class AddDoctorsScreen extends StatefulWidget {
-  final Map<String, dynamic>? doctor;
+class AddPharmacyItemScreen extends StatefulWidget {
+  final Map<String, dynamic>? item;
 
-  const AddDoctorsScreen({super.key, this.doctor});
+  const AddPharmacyItemScreen({super.key, this.item});
 
   @override
-  State<AddDoctorsScreen> createState() => _AddDoctorsScreenState();
+  State<AddPharmacyItemScreen> createState() => _AddPharmacyItemScreenState();
 }
 
-class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
+class _AddPharmacyItemScreenState extends State<AddPharmacyItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _specializationController =
-      TextEditingController();
-  final TextEditingController _areaController = TextEditingController();
-  final TextEditingController _hospitalController = TextEditingController();
-  final TextEditingController _feesController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
   File? _imageFile;
 
   @override
-  @override
   void initState() {
     super.initState();
-    if (widget.doctor != null) {
-      _nameController.text = widget.doctor!['name'] ?? '';
-      _phoneController.text = widget.doctor!['phone'] ?? '';
-      _specializationController.text = widget.doctor!['specialization'] ?? '';
-      _areaController.text = widget.doctor!['area'] ?? '';
-      _hospitalController.text = widget.doctor!['hospital'] ?? '';
-      _feesController.text = widget.doctor!['fees']?.toString() ?? '0';
+    if (widget.item != null) {
+      _nameController.text = widget.item!['name'];
+      _descriptionController.text = widget.item!['description'];
+      _priceController.text = widget.item!['price'].toString();
+      _quantityController.text = widget.item!['quantity'].toString();
     }
   }
 
@@ -48,8 +42,8 @@ class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
     }
   }
 
-  Future<void> _addDoctor(BuildContext context) async {
-    if (_imageFile == null && widget.doctor == null) {
+  Future<void> _addPharmacyItem(BuildContext context) async {
+    if (_imageFile == null && widget.item == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select an image')),
       );
@@ -65,42 +59,38 @@ class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
         if (_imageFile != null) {
           // Upload image to Supabase Storage
           final fileBytes = await _imageFile!.readAsBytes();
-          final fileName =
-              'doctor_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final bucketPath = 'doctors/$fileName'; // Folder in Supabase Storage
+          final fileName = 'item_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final bucketPath = 'pharmacy/$fileName'; // Folder in Supabase Storage
 
-          await supabase.storage.from('doctors').uploadBinary(
+          await supabase.storage.from('pharmacy').uploadBinary(
                 bucketPath,
                 fileBytes,
                 fileOptions: const FileOptions(contentType: 'image/jpeg'),
               );
 
           // Get public URL
-          imageUrl = supabase.storage.from('doctors').getPublicUrl(bucketPath);
+          imageUrl = supabase.storage.from('pharmacy').getPublicUrl(bucketPath);
         }
 
-        final doctor = {
+        final item = {
           'name': _nameController.text,
-          'phone': _phoneController.text.toString(),
-          'specialization': _specializationController.text,
-          'area': _areaController.text,
-          'hospital': _hospitalController.text,
-          'fees': double.tryParse(_feesController.text) ?? 0.0,
-          'photo': imageUrl ?? widget.doctor?['photo'],
+          'description': _descriptionController.text,
+          'price': double.tryParse(_priceController.text) ?? 0.0,
+          'quantity': int.tryParse(_quantityController.text) ?? 0,
+          'photo': imageUrl ?? widget.item?['photo'],
         };
 
-        if (widget.doctor == null) {
-          // Adding a new doctor
-          await supabase.from('doctors').insert(doctor);
-          _showSuccessMessage(context, 'Doctor added successfully!');
-          setState(() {});
+        if (widget.item == null) {
+          // Adding a new item
+          await supabase.from('pharmacy').insert(item);
+          _showSuccessMessage(context, 'Item added successfully!');
         } else {
-          // Updating an existing doctor
+          // Updating an existing item
           await supabase
-              .from('doctors')
-              .update(doctor)
-              .eq('id', widget.doctor!['id']);
-          _showSuccessMessage(context, 'Doctor updated successfully!');
+              .from('pharmacy')
+              .update(item)
+              .eq('id', widget.item!['id']);
+          _showSuccessMessage(context, 'Item updated successfully!');
         }
 
         Navigator.of(context).pop();
@@ -124,12 +114,14 @@ class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
     required String label,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    int? maxLines = 1, // Add maxLines parameter with default value
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
@@ -154,7 +146,7 @@ class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      widget.doctor == null ? 'Add New Doctor' : 'Edit Doctor',
+                      widget.item == null ? 'Add New Item' : 'Edit Item',
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -178,12 +170,11 @@ class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
                                 child:
                                     Image.file(_imageFile!, fit: BoxFit.cover),
                               )
-                            : widget.doctor != null &&
-                                    widget.doctor!['photo'] != null
+                            : widget.item != null &&
+                                    widget.item!['photo'] != null
                                 ? ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                        widget.doctor!['photo'],
+                                    child: Image.network(widget.item!['photo'],
                                         fit: BoxFit.cover),
                                   )
                                 : const Icon(Icons.add_a_photo,
@@ -192,60 +183,52 @@ class _AddDoctorsScreenState extends State<AddDoctorsScreen> {
                     ),
                     _buildTextField(
                       controller: _nameController,
-                      label: 'Doctor Name',
+                      label: 'Item Name',
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter doctor name' : null,
+                          value!.isEmpty ? 'Please enter item name' : null,
                     ),
                     _buildTextField(
-                      controller: _phoneController,
-                      label: 'Phone Number',
-                      keyboardType: TextInputType.phone,
+                      controller: _descriptionController,
+                      label: 'Description',
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter phone number' : null,
+                          value!.isEmpty ? 'Please enter description' : null,
+                      maxLines: null, // Allows multiple lines
                     ),
                     _buildTextField(
-                      controller: _specializationController,
-                      label: 'Specialization',
-                      validator: (value) =>
-                          value!.isEmpty ? 'Please enter specialization' : null,
-                    ),
-                    _buildTextField(
-                      controller: _areaController,
-                      label: 'Area',
-                      validator: (value) =>
-                          value!.isEmpty ? 'Please enter area' : null,
-                    ),
-                    _buildTextField(
-                      controller: _hospitalController,
-                      label: 'Hospital/Clinic',
-                      validator: (value) => value!.isEmpty
-                          ? 'Please enter hospital/clinic'
-                          : null,
-                    ),
-                    _buildTextField(
-                      controller: _feesController,
-                      label: 'Consultation Fees',
+                      controller: _priceController,
+                      label: 'Price',
                       keyboardType: TextInputType.number,
                       validator: (value) {
-                        if (value!.isEmpty) return 'Please enter fees';
+                        if (value!.isEmpty) return 'Please enter price';
                         if (double.tryParse(value) == null) {
-                          return 'Please enter valid amount';
+                          return 'Please enter valid price';
+                        }
+                        return null;
+                      },
+                    ),
+                    _buildTextField(
+                      controller: _quantityController,
+                      label: 'Quantity',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value!.isEmpty) return 'Please enter quantity';
+                        if (int.tryParse(value) == null) {
+                          return 'Please enter valid quantity';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () => _addDoctor(context),
+                      onPressed: () => _addPharmacyItem(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: Text(widget.doctor == null
-                          ? 'Add Doctor'
-                          : 'Save Changes'),
+                      child: Text(
+                          widget.item == null ? 'Add Item' : 'Save Changes'),
                     ),
                   ],
                 ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   static const teal = Color(0xFF008A8A);
-  static get lightBlue => Color(0xFF008A8A).withOpacity(0.22);
+  static get lightBlue => const Color(0xFF008A8A).withOpacity(0.22);
 }
 
 class AppConstants {

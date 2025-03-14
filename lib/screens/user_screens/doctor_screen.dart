@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import '../../database/doctor_db_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class DoctorScreen extends StatefulWidget {
   const DoctorScreen({super.key});
@@ -12,7 +13,6 @@ class DoctorScreen extends StatefulWidget {
 }
 
 class _DoctorScreenState extends State<DoctorScreen> {
-  final DoctorDatabaseHelper _dbHelper = DoctorDatabaseHelper();
   List<Map<String, dynamic>> _doctors = [];
 
   @override
@@ -22,7 +22,15 @@ class _DoctorScreenState extends State<DoctorScreen> {
   }
 
   Future<void> _loadDoctors() async {
-    final doctors = await _dbHelper.getAllDoctors();
+    final doctors = await Supabase.instance.client.from('doctors').select();
+    for (var doctor in doctors) {
+      final doctorName = await Supabase.instance.client
+          .from('users')
+          .select('name')
+          .eq('id', doctor['user_id'])
+          .single();
+      doctor['name'] = doctorName['name'];
+    }
     setState(() {
       _doctors = doctors;
     });
@@ -34,7 +42,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
       builder: (context) => Material(
         child: SafeArea(
           child: Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             height: MediaQuery.of(context).size.height * 0.7,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +51,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
                 Align(
                   alignment: Alignment.topRight,
                   child: IconButton(
-                    icon: Icon(Icons.close),
+                    icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -55,50 +63,49 @@ class _DoctorScreenState extends State<DoctorScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(75),
                       border: Border.all(color: Colors.teal, width: 2),
-                      image: doctor['photo'] != null
+                      image: doctor['photo'] != null && doctor['photo'].isNotEmpty
                           ? DecorationImage(
-                        image: MemoryImage(doctor['photo']),
+                        image: NetworkImage(doctor['photo']),
                         fit: BoxFit.cover,
-
                       )
-                          : DecorationImage(
+                          : const DecorationImage(
                         image: AssetImage('assets/images/default_doctor.png'),
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Doctor Details
                 Text(
-                  doctor['name'],
-                  style: TextStyle(
+                  doctor['name'] ?? 'N/A',
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.teal,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
-                  "Specialization: ${doctor['specialization']}",
-                  style: TextStyle(fontSize: 18, color: Colors.black87),
+                  "Specialization: ${doctor['specialization'] ?? 'N/A'}",
+                  style: const TextStyle(fontSize: 18, color: Colors.black87),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
-                  "Area: ${doctor['area']}",
-                  style: TextStyle(fontSize: 16, color: Colors.black87),
+                  "Area: ${doctor['area'] ?? 'N/A'}",
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Text(
-                  "Hospital/Clinic: ${doctor['hospital']}",
-                  style: TextStyle(fontSize: 16, color: Colors.black87),
+                  "Hospital/Clinic: ${doctor['hospital'] ?? 'N/A'}",
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
-                  "Consultation Fees: Rs. ${doctor['fees']}",
-                  style: TextStyle(fontSize: 16, color: Colors.black87),
+                  "Consultation Fees: Rs. ${doctor['fees']?.toString() ?? 'N/A'}",
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
-                Spacer(),
+                const Spacer(),
                 // Action Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -111,32 +118,36 @@ class _DoctorScreenState extends State<DoctorScreen> {
                           if (await canLaunch(phoneUrl)) {
                             await launch(phoneUrl);
                           } else {
-                            throw 'Could not open the dialer.';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not open the dialer.')),
+                            );
                           }
                         } else {
-                          throw 'Phone number is invalid or missing.';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Phone number is missing.')),
+                          );
                         }
                       },
-                      icon: Icon(Icons.phone, color: Colors.white),
-                      label: Text('Call'),
+                      icon: const Icon(Icons.phone, color: Colors.white),
+                      label: const Text('Call'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
-                        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () {
                         // Book appointment functionality
                       },
-                      child: Text('Book Appointment'),
+                      child: const Text('Book Appointment'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
-                        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -145,13 +156,14 @@ class _DoctorScreenState extends State<DoctorScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
 
         children: [
-          SizedBox(height: AppConstants.deviceHeight*.055),
+          SizedBox(height: AppConstants.deviceHeight * .055),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -176,11 +188,12 @@ class _DoctorScreenState extends State<DoctorScreen> {
           ),
           // Body content
           _doctors.isEmpty
-              ? Center(child: Text('No Doctors available', style: TextStyle(fontSize: 18, color: Colors.black87)))
+              ? const Center(child: Text('No Doctors available',
+              style: TextStyle(fontSize: 18, color: Colors.black87)))
               : Expanded(
             child: GridView.builder(
-              padding: EdgeInsets.all(16),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio: 0.75, // Keep this ratio
                 crossAxisSpacing: 16,
@@ -204,16 +217,17 @@ class _DoctorScreenState extends State<DoctorScreen> {
                           flex: 3,
                           child: Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.vertical(
+                              borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(12),
                               ),
                               image: doctor['photo'] != null
                                   ? DecorationImage(
-                                image: MemoryImage(doctor['photo']),
+                                image: NetworkImage(doctor['photo']),
                                 fit: BoxFit.cover,
                               )
-                                  : DecorationImage(
-                                image: AssetImage('assets/images/default_doctor.png'),
+                                  : const DecorationImage(
+                                image: AssetImage(
+                                    'assets/images/default_doctor.png'),
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -223,21 +237,21 @@ class _DoctorScreenState extends State<DoctorScreen> {
                         Expanded(
                           flex: 2,
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(8, 8, 8, 4),
+                            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  doctor['name'],
-                                  style: TextStyle(
+                                  doctor['name']??'N?A',
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
                                   doctor['specialization'],
                                   style: TextStyle(
@@ -247,7 +261,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
                                   doctor['area'],
                                   style: TextStyle(

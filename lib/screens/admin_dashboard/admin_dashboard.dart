@@ -3,8 +3,9 @@ import '../../constants.dart';
 import 'manage_users_screen.dart';
 import 'doctor_management/manage_doctors_screen.dart';
 import 'pharmacy_management/manage_pharmacy_screen.dart';
-import 'inbox_screen.dart';
+import 'notification_screen.dart';
 import '../../widgets/navigation_button.dart';
+import '../../services/auth_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -14,29 +15,28 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  int _selectedIndex = 2; // Default Home screen
+  int _selectedIndex = 2;
 
   List<Widget> _getScreens() {
     return [
-      ManageUsersScreen(),
-      ManageDoctorsScreen(),
-      AdminHomeScreen(onNavigate: _updateIndex), // Pass the function
-      AdminPharmacyScreen(),
-      InboxScreen(),
+      const ManageUsersScreen(),
+      const ManageDoctorsScreen(),
+      AdminHomeScreen(onNavigate: _updateIndex),
+      const ManagePharmacyScreen(),
+      NotificationScreen(),
     ];
   }
+
   void _updateIndex(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _getScreens()[_selectedIndex], // Dynamically display the selected screen
+      body: _getScreens()[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
@@ -49,27 +49,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           });
         },
         items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Users'),
-          const BottomNavigationBarItem(icon: Icon(Icons.medical_services), label: 'Doctors'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.person), label: 'Users'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.medical_services), label: 'Doctors'),
           BottomNavigationBarItem(
             icon: Container(
               decoration: const BoxDecoration(
                 color: AppColors.teal,
                 shape: BoxShape.circle,
               ),
-              padding: EdgeInsets.all(AppConstants.deviceWidth * 0.03), // Responsive padding
+              padding: EdgeInsets.all(
+                  AppConstants.deviceWidth * 0.03), // Responsive padding
               child: const Icon(Icons.home, color: Colors.white),
             ),
             label: 'Home',
           ),
-
-          const BottomNavigationBarItem(icon: Icon(Icons.local_pharmacy), label: 'Pharmacy'),
-          const BottomNavigationBarItem(icon: Icon(Icons.inbox), label: 'Inbox'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.local_pharmacy), label: 'Pharmacy'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.notifications), label: 'Notifications'),
         ],
       ),
     );
   }
 }
+
 class AdminHomeScreen extends StatelessWidget {
   final Function(int) onNavigate; // Callback function to update index
 
@@ -85,6 +90,13 @@ class AdminHomeScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  onPressed: () {
+                    AuthService().clearCredentials();
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                ),
                 Text(
                   'Admin Dashboard',
                   style: TextStyle(
@@ -105,10 +117,22 @@ class AdminHomeScreen extends StatelessWidget {
                 mainAxisSpacing: AppConstants.deviceHeight * 0.02,
                 crossAxisSpacing: AppConstants.deviceWidth * 0.04,
                 children: [
-                  NavigationButton(title: 'Manage Users', screenIndex: 0, onTap: () => onNavigate(0)),
-                  NavigationButton(title: 'Manage Doctors', screenIndex: 1, onTap: () => onNavigate(1)),
-                  NavigationButton(title: 'Manage Pharmacy', screenIndex: 3, onTap: () => onNavigate(3)),
-                  NavigationButton(title: 'User Inbox', screenIndex: 4, onTap: () => onNavigate(4)),
+                  NavigationButton(
+                      title: 'Manage Users',
+                      screenIndex: 0,
+                      onTap: () => onNavigate(0)),
+                  NavigationButton(
+                      title: 'Manage Doctors',
+                      screenIndex: 1,
+                      onTap: () => onNavigate(1)),
+                  NavigationButton(
+                      title: 'Manage Pharmacy',
+                      screenIndex: 3,
+                      onTap: () => onNavigate(3)),
+                  NavigationButton(
+                      title: 'Notifications',
+                      screenIndex: 4,
+                      onTap: () => onNavigate(4)),
                 ],
               ),
             ),
