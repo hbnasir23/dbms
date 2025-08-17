@@ -4,7 +4,6 @@ class AppColors {
   static const teal = Color(0xFF008A8A);
   static get lightBlue => const Color(0xFF008A8A).withOpacity(0.22);
 }
-
 class AppConstants {
   static late double deviceWidth;
   static late double deviceHeight;
