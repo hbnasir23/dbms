@@ -1,5 +1,7 @@
 # [Download APK (Google Drive Link)](https://drive.google.com/drive/folders/1U_VSI1ELwWuux0guhhbSOrxdY6b3f2BE?usp=drive_link)
 
+# [Download Report ](https://github.com/hbnasir23/dbms/blob/main/SYSTEM%20ARCHITECTURE%20AND%20DESIGN.pdf)
+
 # Health App (DBMS Project)
 
 A comprehensive Flutter-based healthcare management application designed to connect Users, Doctors, and Administrators. This project facilitates appointment scheduling, pharmacy management, and secure user authentication.
